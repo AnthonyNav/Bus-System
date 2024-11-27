@@ -9,6 +9,13 @@
 
 #define SIZE 255
 
+// NORTE ES 1, SUR ES 2, ESTE ES 3, OESTE ES 4
+const char *NORTE[] = {"Baja California", "Baja California Sur", "Sonora", "Chihuahua", "Coahuila", "Nuevo León", "Durango", "Zacatecas", "San Luis Potosi"};
+const char *SUR[] = {"Chiapas", "Tabasco", "Campeche", "Yucatán", "Quintana Roo", "Oaxaca"};
+const char *ESTE[] = {"Tamaulipas", "Veracruz", "Tlaxcala", "Puebla"};
+const char *OESTE[] = {"Sinaloa", "Nayarit", "Jalisco", "Colima", "Michoacán", "Guanajuato", "Aguascalientes", "Ciudad de México", "Estado de México", "Morelos"};
+
+
 int main(int argc, char *argv[]) {
     int mi_socket, nuevo, tam;
     struct sockaddr_in mi_estructura;
@@ -52,11 +59,13 @@ int main(int argc, char *argv[]) {
             // char menu[] = "Seleccione una central de autobuses:\n1. ADO\n2. FUTURA\n3. ESTRELLA BLANCA\n4. PREMIERE\n5. ESTRELLA ROJA\n";
             // send(nuevo, menu, sizeof(menu), 0);
 
+            // Estado de reserva
+            int reserva[4] = {-1,-1,-1,-1};
             // Recibir la selección de la línea de autobuses
             int seleccion = recv(nuevo, buffer, SIZE - 1, 0);
             buffer[seleccion] = '\0';
             printf("El cliente seleccionó la línea de autobuses: %s\n", buffer);
-            int opcion = atoi(buffer);
+            reserva[0] = atoi(buffer);
 
             // Dependiendo de la selección, enviar las rutas disponibles
             // char *rutas;
@@ -74,34 +83,66 @@ int main(int argc, char *argv[]) {
             int seleccionRuta = recv(nuevo, buffer, SIZE - 1, 0);
             buffer[seleccionRuta] = '\0';
             printf("El cliente seleccionó la ruta: %s\n", buffer);
-            int ruta = atoi(buffer);
+            reserva[1] = atoi(buffer);
+            int num_estados = 0;
+            // Enviar los estados para la ruta seleccionada
+            switch (reserva[1]) {
+                case 1: // NORTE
+                    num_estados = sizeof(NORTE) / sizeof(NORTE[0]);
+                    snprintf(buffer, SIZE, "%d", num_estados);
+                    send(nuevo, buffer, strlen(buffer), 0);
 
-            // // Enviar los estados para la ruta seleccionada
-            // char *estados;
-            // switch (ruta) {
-            //     case 1: // NORTE
-            //         estados = "Seleccione un estado:\n1. SONORA\n2. BAJA CALIFORNIA\n3. CHIHUAHUA\n4. MONTERREY\n5. TAMAULIPAS\n";
-            //         break;
-            //     case 2: // SUR
-            //         estados = "Seleccione un estado:\n1. CHIAPAS\n2. QUINTANA ROO\n3. YUCATÁN\n4. CAMPECHE\n5. TABASCO\n";
-            //         break;
-            //     case 3: // ESTE
-            //         estados = "Seleccione un estado:\n1. VERACRUZ\n2. PUEBLA\n3. CDMX\n4. TLAXCALA\n5. MORELOS\n";
-            //         break;
-            //     case 4: // OESTE
-            //         estados = "Seleccione un estado:\n1. JALISCO\n2. COLIMA\n3. NAYARIT\n4. MICHOACÁN\n5. GUANAJUATO\n";
-            //         break;
-            //     default:
-            //         estados = "No hay estados disponibles para esta ruta.\n";
-            //         break;
-            // }
+                    // Envio de los estados
+                    for (int i = 0; i < num_estados; i++){
+                        snprintf(buffer, SIZE, "%s", NORTE[i]); // Cada cadena seguida de '\n'
+                        send(nuevo, buffer, strlen(buffer), 0);
+                    }
+                    
+                    break;
+                case 2: // SUR
+                    num_estados = sizeof(SUR) / sizeof(SUR[0]);
+                    snprintf(buffer, SIZE, "%d", num_estados);
+                    send(nuevo, buffer, strlen(buffer), 0);
+
+                    // Envio de los estados
+                    for (int i = 0; i < num_estados; i++){
+                        snprintf(buffer, SIZE, "%s", SUR[i]); // Cada cadena seguida de '\n'
+                        send(nuevo, buffer, strlen(buffer), 0);
+                    }
+                    break;
+                case 3: // ESTE
+                    num_estados = sizeof(ESTE) / sizeof(ESTE[0]);
+                    snprintf(buffer, SIZE, "%d", num_estados);
+                    send(nuevo, buffer, strlen(buffer), 0);
+
+                    // Envio de los estados
+                    for (int i = 0; i < num_estados; i++){
+                        snprintf(buffer, SIZE, "%s", ESTE[i]); // Cada cadena seguida de '\n'
+                        send(nuevo, buffer, strlen(buffer), 0);
+                    }
+                    break;
+                case 4: // OESTE
+                    num_estados = sizeof(OESTE) / sizeof(OESTE[0]);
+                    snprintf(buffer, SIZE, "%d", num_estados);
+                    send(nuevo, buffer, strlen(buffer), 0);
+
+                    // Envio de los estados
+                    for (int i = 0; i < num_estados; i++){
+                        snprintf(buffer, SIZE, "%s", OESTE[i]); // Cada cadena seguida de '\n'
+                        send(nuevo, buffer, strlen(buffer), 0);
+                    }
+                    break;
+                default:
+                    exit(0);
+
+                    break;
+            }
             // send(nuevo, estados, strlen(estados), 0);
-
             // // Recibir la selección del estado
-            // int seleccionEstado = recv(nuevo, buffer, SIZE - 1, 0);
-            // buffer[seleccionEstado] = '\0';
-            // printf("El cliente seleccionó el estado: %s\n", buffer);
-
+            int seleccionEstado = recv(nuevo, buffer, SIZE - 1, 0);
+            buffer[seleccionEstado] = '\0';
+            reserva[2] = atoi(buffer);
+            printf("El cliente seleccionó el estado: %d\n", reserva[2]);
 
             // // Enviar los horarios disponibles
             // char horarios[] = "Seleccione un horario:\n1. 8 AM\n2. 10 AM\n3. 12 PM\n4. 3 PM\n5. 6 PM\n";
@@ -114,7 +155,11 @@ int main(int argc, char *argv[]) {
 
             // // Confirmación al cliente
             // send(nuevo, "Su selección ha sido registrada. ¡Gracias!\n", 45, 0);
-
+            printf("\nEl estado de la reserva es: ");
+            for (int i = 0; i < 4; i++){
+                printf("%d ", reserva[i]);
+            }
+            
             close(nuevo);
             exit(0);
         } else { // Proceso padre

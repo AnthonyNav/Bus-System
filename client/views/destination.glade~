@@ -6,7 +6,7 @@
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">UnixBus</property>
     <property name="window-position">center-always</property>
-    <property name="default-width">650</property>
+    <property name="default-width">600</property>
     <property name="default-height">350</property>
     <child>
       <object class="GtkBox">
@@ -25,7 +25,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="padding">20</property>
+            <property name="padding">27</property>
             <property name="position">0</property>
           </packing>
         </child>
@@ -71,7 +71,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBoxText" id="LineasBox">
+                  <object class="GtkComboBoxText" id="destinations_list">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                   </object>
@@ -113,7 +113,6 @@
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="padding">10</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -141,16 +140,16 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="buttonAccept">
+              <object class="GtkButton" id="continue">
                 <property name="label" translatable="yes">Continuar</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="padding">11</property>
+                <property name="padding">10</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -186,6 +185,7 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="title" translatable="yes">BUAP</property>
+            <property name="has-subtitle">False</property>
             <child>
               <placeholder/>
             </child>

@@ -12,6 +12,10 @@
 
 // Variables globales
 GtkWidget *window;
+GtkComboBoxText *comboBox;
+
+// Controlador de reserva [linea, ruta, estado, horario, asiento]
+int reserva[4] = {-1,-1,-1,-1};
 
 // Callback para el botón
 void on_button_clicked_lines(GtkButton *button, char *buffer) {
@@ -19,24 +23,23 @@ void on_button_clicked_lines(GtkButton *button, char *buffer) {
     const char *text = gtk_button_get_label(button);
 
     if (strcmp(text, "ADO") == 0) {
-        //printf("OPCION ADO\n");
-        buffer[0] = '1'; 
+        //printf("OPCION ADO\n"); 
+        reserva[0] = 1;
     }
     else if ((strcmp(text, "FUTURA") == 0)) {
         //printf("OPCION FUTURA\n");
-        buffer[0] = '2';
+        reserva[0] = 2;
     }
     else if ((strcmp(text, "ESTRELLA BLANCA") == 0)) {
         //printf("OPCION ESTRELLA\n");
-        buffer[0] = '3';
+        reserva[0] = 3;
     }
     else if ((strcmp(text, "PREMIERE PLUS") == 0)) {
         //printf("OPCION PREMIERE\n");
-        buffer[0] = '4';
+        reserva[0] = 4;
     }
     else{
-        //printf("DEFAULT");
-        buffer[0] = 'N';
+        printf("Error: Linea inexistente");
     }
     //printf("Fin de la funcion\n");
     gtk_widget_hide(window);
@@ -46,7 +49,7 @@ void on_button_clicked_lines(GtkButton *button, char *buffer) {
 
 
 
-void linesView(int argc, char *argv[], char *buffer){
+void linesView(int argc, char *argv[]){
     // Definiendo los componentes de la GUI
     GtkBuilder *builder;
     GtkButton *button_ADO;
@@ -91,13 +94,13 @@ void linesView(int argc, char *argv[], char *buffer){
     }
 
     // Conectando los signals para llamar a la funcion
-    g_signal_connect(button_ADO, "clicked", G_CALLBACK(on_button_clicked_lines), buffer);
+    g_signal_connect(button_ADO, "clicked", G_CALLBACK(on_button_clicked_lines), NULL);
 
-    g_signal_connect(button_FUTURA, "clicked", G_CALLBACK(on_button_clicked_lines), buffer);
+    g_signal_connect(button_FUTURA, "clicked", G_CALLBACK(on_button_clicked_lines), NULL);
 
-    g_signal_connect(button_ESTRELLA, "clicked", G_CALLBACK(on_button_clicked_lines), buffer);
+    g_signal_connect(button_ESTRELLA, "clicked", G_CALLBACK(on_button_clicked_lines), NULL);
 
-    g_signal_connect(button_PREMIERE, "clicked", G_CALLBACK(on_button_clicked_lines), buffer);
+    g_signal_connect(button_PREMIERE, "clicked", G_CALLBACK(on_button_clicked_lines), NULL);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
@@ -112,26 +115,25 @@ void linesView(int argc, char *argv[], char *buffer){
 void on_button_clicked_routes(GtkButton *button, char *buffer) {
     //printf("Se activó la función\n");
     const char *text = gtk_button_get_label(button);
-
+    printf("%s\n", text);
     if (strcmp(text, "NORTE") == 0) {
         //printf("OPCION NORTE\n");
-        buffer[0] = '1'; 
+        reserva[1] = 1;
     }
     else if ((strcmp(text, "SUR") == 0)) {
         //printf("OPCION SUR\n");
-        buffer[0] = '2';
+        reserva[1] = 2;
     }
     else if ((strcmp(text, "ESTE") == 0)) {
         //printf("OPCION ESTE\n");
-        buffer[0] = '3';
+        reserva[1] = 3;
     }
     else if ((strcmp(text, "OESTE") == 0)) {
         //printf("OPCION OESTE\n");
-        buffer[0] = '4';
+        reserva[1] = 4;
     }
     else{
-        //printf("DEFAULT");
-        buffer[0] = 'N';
+        printf("ERROR: REGION INEXISTENTE");
     }
     //printf("Fin de la funcion\n");
     gtk_widget_hide(window);
@@ -139,7 +141,7 @@ void on_button_clicked_routes(GtkButton *button, char *buffer) {
 }
 
 
-void routesView(int argc, char *argv[], char *buffer){
+void routesView(int argc, char *argv[]){
     // Definiendo los componentes de la GUI
     GtkBuilder *builder;
     GtkButton *button_NORTE;
@@ -184,13 +186,13 @@ void routesView(int argc, char *argv[], char *buffer){
     }
 
     // Conectando los signals para llamar a la funcion
-    g_signal_connect(button_NORTE, "clicked", G_CALLBACK(on_button_clicked_routes), buffer);
+    g_signal_connect(button_NORTE, "clicked", G_CALLBACK(on_button_clicked_routes), NULL);
 
-    g_signal_connect(button_SUR, "clicked", G_CALLBACK(on_button_clicked_routes), buffer);
+    g_signal_connect(button_SUR, "clicked", G_CALLBACK(on_button_clicked_routes), NULL);
 
-    g_signal_connect(button_ESTE, "clicked", G_CALLBACK(on_button_clicked_routes), buffer);
+    g_signal_connect(button_ESTE, "clicked", G_CALLBACK(on_button_clicked_routes), NULL);
 
-    g_signal_connect(button_OESTE, "clicked", G_CALLBACK(on_button_clicked_routes), buffer);
+    g_signal_connect(button_OESTE, "clicked", G_CALLBACK(on_button_clicked_routes), NULL);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
@@ -201,6 +203,61 @@ void routesView(int argc, char *argv[], char *buffer){
     gtk_main();
 
 }
+
+void on_button_clicked_dest(GtkButton *button, char *buffer) {
+    int selection = gtk_combo_box_get_active(GTK_COMBO_BOX(comboBox));
+    //printf("posicion %d", selection);
+    reserva[2] = selection;
+    gtk_widget_hide(window);
+    gtk_main_quit();
+}
+
+
+void destinationsView(int argc, char *argv[], char *buffer, char ESTADO[][20], int num_estados){
+    // Definiendo los componentes de la GUI
+    GtkBuilder *builder;
+    GtkButton *button_ACCEPT;
+    
+    // Inicializar GTK
+    gtk_init(&argc, &argv);
+
+    // Cargar archivo Glade
+    builder = gtk_builder_new_from_file("./views/destination.glade");
+
+    // Obtener ventana principal
+    window = GTK_WIDGET(gtk_builder_get_object(builder, "destWindow"));
+    if (!window) {
+        g_error("Error: No se pudo cargar la ventana principal.");
+    }
+    // Obtener el combo box para la seleccion de destinos
+    comboBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "destinations_list"));
+    if (!comboBox) {
+        g_error("Error: No se pudo cargar el combobox .");
+    }
+    // Rellena el combobox
+    for (int i = 0; i < num_estados; i++) {
+        gtk_combo_box_text_append_text(comboBox, ESTADO[i]);
+    }
+
+    gtk_combo_box_set_active(GTK_COMBO_BOX(comboBox), 0);
+
+    // Obtener botón continuar o aceptar
+    button_ACCEPT = GTK_BUTTON(gtk_builder_get_object(builder, "continue"));
+    if (!button_ACCEPT) {
+        g_error("Error: No se pudo cargar el botón 'NORTE'.");
+    }
+
+    // Conectando los signals para llamar a la funcion
+    g_signal_connect(button_ACCEPT, "clicked", G_CALLBACK(on_button_clicked_dest), buffer);
+
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Mostrar ventana principal
+    gtk_widget_show_all(window);
+    // Iniciar el bucle principal de GTK
+    gtk_main();
+}
+
 
 
 // int main(int argc, char *argv[]) {
@@ -214,8 +271,8 @@ void routesView(int argc, char *argv[], char *buffer){
 
 
 int main(int argc, char *argv[]) {
-    int mi_socket, tam, numbytes;
-    char buffer[SIZE];
+    int mi_socket, tam, numbytes, numEst;
+    char buffer[SIZE] = {0}, estados[15][20];
     struct sockaddr_in mi_estructura;
 
     if (argc != 3) {
@@ -251,42 +308,52 @@ int main(int argc, char *argv[]) {
     numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
     buffer[numbytes] = '\0';
     // printf("%s", buffer);
-    char optionLine[] = "0";
     if (strcmp(buffer, "1") != 0) {
         printf("Se rechazo el permiso");
         exit(1);
     } 
-    linesView(argc, argv, optionLine);
-    // // Recibir y mostrar menú
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("%s", buffer);
+    // Seleccion de linea
+    linesView(argc, argv);
+    char choiceLine[2];
+    if (reserva[0] == -1){
+        exit(1);
+    }
+    // Conversion de numero a cadena
+    sprintf(choiceLine, "%d", reserva[0]);
+    printf("Linea: %s", choiceLine);
+    send(mi_socket, choiceLine, strlen(choiceLine), 0);
 
-    // Seleccionar línea de autobuses
-    // printf("Seleccione una línea de autobuses (1-5): ");
-    // fgets(buffer, SIZE, stdin);
-
-    send(mi_socket, optionLine, strlen(optionLine), 0);
-
-    // Recibir y mostrar rutas
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("%s", buffer);
-
-    // Seleccionar ruta
-    
-    // printf("Seleccione una ruta (1-4): ");
-    // fgets(buffer, SIZE, stdin);
-    char optionRoute[] = "0";
-    routesView(argc, argv, optionRoute);
-    send(mi_socket, optionRoute, strlen(optionRoute), 0);
-    
-
+    routesView(argc, argv);
+    char choiceRoute[2];
+    if (reserva[1] == -1){
+        exit(1);
+    }
+    sprintf(choiceRoute, "%d", reserva[1]);
+    printf("Ruta: %s", choiceRoute);
+    send(mi_socket, choiceRoute, strlen(choiceRoute), 0);
 
     // // Recibir y mostrar los estados disponibles para la ruta seleccionada
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("%s\n", buffer); // Imprimir los estados disponibles
+    numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+    buffer[numbytes] = '\0';
+    // printf("\n%s\n", buffer); // Imprimir la cantidad de estados a recibir
+    numEst = atoi(buffer);
+
+    for (int i = 0; i < numEst; i++) {
+        numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+        buffer[numbytes] = '\0';
+        //printf("Entrada: %s\n", buffer);
+        strcpy(estados[i], buffer);
+        //printf("Guardado: %s\n", estados[i]);
+    }
+    // Destinos
+    destinationsView(argc, argv, buffer, estados, numEst);
+    char choiceDest[2];
+    if (reserva[2] == -1){
+        exit(1);
+    }
+    sprintf(choiceDest, "%d", reserva[2]);
+    printf("Ruta: %s", choiceDest);
+    send(mi_socket, choiceDest, strlen(choiceDest), 0);
 
     // // Solicitar la selección de estado al usuario
     // printf("Seleccione un estado: ");
