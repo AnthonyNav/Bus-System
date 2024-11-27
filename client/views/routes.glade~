@@ -6,7 +6,7 @@
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">UnixBus</property>
     <property name="window-position">center</property>
-    <property name="default-width">800</property>
+    <property name="default-width">600</property>
     <property name="default-height">450</property>
     <property name="type-hint">menu</property>
     <child>
@@ -24,7 +24,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Seleccione una linea de autobus</property>
+                <property name="label" translatable="yes">Seleccione una ruta</property>
                 <attributes>
                   <attribute name="weight" value="medium"/>
                   <attribute name="scale" value="3"/>
@@ -41,11 +41,12 @@
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="pixbuf">fontImage.png</property>
+                <property name="pixbuf">brujula.png</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
+                <property name="padding">15</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -82,8 +83,8 @@
                     <property name="row-homogeneous">True</property>
                     <property name="column-homogeneous">True</property>
                     <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">ADO</property>
+                      <object class="GtkButton" id="NORTE">
+                        <property name="label" translatable="yes">NORTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -94,8 +95,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">FUTURA</property>
+                      <object class="GtkButton" id="SUR">
+                        <property name="label" translatable="yes">SUR</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -106,8 +107,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">ESTRELLA BLANCA</property>
+                      <object class="GtkButton" id="ESTE">
+                        <property name="label" translatable="yes">ESTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -118,8 +119,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">PREMIER PLUS</property>
+                      <object class="GtkButton" id="OESTE">
+                        <property name="label" translatable="yes">OESTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>

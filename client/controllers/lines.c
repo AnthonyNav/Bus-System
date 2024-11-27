@@ -102,7 +102,5 @@ int main(int argc, char *argv[]) {
     char buffer[255] = {0};
     linesView(argc, argv, buffer);
     printf("La linea seleccionada fue: %c", buffer[0]);
-    linesView(argc, argv, buffer);
-    printf("La linea seleccionada fue: %c", buffer[0]);
     return 0;
 }

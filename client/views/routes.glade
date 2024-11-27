@@ -2,7 +2,7 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkWindow" id="Window">
+  <object class="GtkWindow" id="routesWindow">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">UnixBus</property>
     <property name="window-position">center</property>
@@ -83,7 +83,7 @@
                     <property name="row-homogeneous">True</property>
                     <property name="column-homogeneous">True</property>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="NORTE">
                         <property name="label" translatable="yes">NORTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -95,7 +95,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="SUR">
                         <property name="label" translatable="yes">SUR</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -107,7 +107,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="ESTE">
                         <property name="label" translatable="yes">ESTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -119,7 +119,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="OESTE">
                         <property name="label" translatable="yes">OESTE</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
