@@ -47,7 +47,7 @@ void linesView(int argc, char *argv[], char *buffer){
     gtk_init(&argc, &argv);
 
     // Cargar archivo Glade
-    builder = gtk_builder_new_from_file("../views/lines.glade");
+    builder = gtk_builder_new_from_file("./views/lines.glade");
 
     // Obtener ventana principal
     window = GTK_WIDGET(gtk_builder_get_object(builder, "linesWindow"));
@@ -98,11 +98,10 @@ void linesView(int argc, char *argv[], char *buffer){
 
 }
 
+
 int main(int argc, char *argv[]) {
     char buffer[255] = {0};
     linesView(argc, argv, buffer);
-    printf("La linea seleccionada fue: %c", buffer[0]);
-    linesView(argc, argv, buffer);
-    printf("La linea seleccionada fue: %c", buffer[0]);
+    printf("La linea seleccionada fue: %c\n", buffer[0]);
     return 0;
 }
