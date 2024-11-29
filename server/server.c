@@ -8,15 +8,87 @@
 #include <string.h>
 
 #define SIZE 255
+// Estado de la reserva
+int reserva[5] = {-1,-1,-1,-1, -1};
+// Asientos disponibles
+int asientos[10] = {1,1,1,1,1,1,1,1,1,1};
+// Descuento vacacional
+int vacational[2] = {1,5};
+double costos[10];
 
 // NORTE ES 1, SUR ES 2, ESTE ES 3, OESTE ES 4
 const char *NORTE[] = {"Baja California", "Baja California Sur", "Sonora", "Chihuahua", "Coahuila", "Nuevo León", "Durango", "Zacatecas", "San Luis Potosi"};
 const char *SUR[] = {"Chiapas", "Tabasco", "Campeche", "Yucatán", "Quintana Roo", "Oaxaca"};
 const char *ESTE[] = {"Tamaulipas", "Veracruz", "Tlaxcala", "Puebla"};
 const char *OESTE[] = {"Sinaloa", "Nayarit", "Jalisco", "Colima", "Michoacán", "Guanajuato", "Aguascalientes", "Ciudad de México", "Estado de México", "Morelos"};
+const char *HORARIOS[] = {"8:00 AM", "10 AM", "12 PM", "3 PM", "6 PM"};
+const char *registroReservas = "reservas.txt";
 
+void construir_cadena(char *buffer, const char *estados[], int num_estados, const char *delimitador) {
+    buffer[0] = '\0'; // Asegurarse de limpiar el buffer
+    for (int i = 0; i < num_estados; i++) {
+        strcat(buffer, estados[i]); // Concatenar el estado al buffer
+        if (i < num_estados - 1) {  // No agregar delimitador al último estado
+            strcat(buffer, delimitador);
+        }
+    }
+}
+
+// Función para leer el archivo y comparar
+void search(const char *nombreArchivo) {
+    FILE *archivo = fopen(nombreArchivo, "r");
+    if (!archivo) {
+        perror("Error al abrir el archivo");
+        exit(EXIT_FAILURE);
+    }
+
+    char linea[256]; // Buffer para almacenar una línea del archivo
+    int numeros[5];  // Arreglo para almacenar los números de cada línea
+
+    while (fgets(linea, sizeof(linea), archivo)) {
+        // Convertir la línea en números enteros
+        if (sscanf(linea, "%d %d %d %d %d", &numeros[0], &numeros[1], &numeros[2], &numeros[3], &numeros[4]) == 5) {
+            // Comparar los primeros 4 números con el arreglo global
+            int coincidencia = 1;
+            for (int i = 0; i < 4; i++) {
+                if (numeros[i] != reserva[i]) {
+                    coincidencia = 0;
+                    break;
+                }
+            }
+
+            // Imprimir "Encontrado" si todos coinciden
+            if (coincidencia) {
+                asientos[numeros[4]] = 0;
+            }
+        } else {
+            printf("Línea no válida: %s", linea);
+        }
+    }
+
+    fclose(archivo);
+}
+
+void registerTicket(const char *nombreArchivo){
+    // Abrir el archivo en modo "append" para agregar contenido
+    FILE *archivo = fopen(registroReservas, "a");
+    if (archivo == NULL) {
+        perror("Error al abrir el archivo");
+        exit(-1);
+    }
+
+    // Escribir los elementos del arreglo en el archivo
+    for (int i = 0; i < 5; i++) {
+        fprintf(archivo, "%d ", reserva[i]);
+    }
+    fprintf(archivo, "\n"); // Nueva línea al final
+
+    // Cerrar el archivo
+    fclose(archivo);
+}
 
 int main(int argc, char *argv[]) {
+    int disponibleHorario = 0;
     int mi_socket, nuevo, tam;
     struct sockaddr_in mi_estructura;
     char buffer[SIZE];
@@ -55,29 +127,16 @@ int main(int argc, char *argv[]) {
             char permiso[] = "1";
             send(nuevo, permiso, strlen(permiso), 0);
 
-            // // Enviar el menú de líneas de autobuses
-            // char menu[] = "Seleccione una central de autobuses:\n1. ADO\n2. FUTURA\n3. ESTRELLA BLANCA\n4. PREMIERE\n5. ESTRELLA ROJA\n";
-            // send(nuevo, menu, sizeof(menu), 0);
-
             // Estado de reserva
-            int reserva[4] = {-1,-1,-1,-1};
+            for (int i = 0; i < 4; i++){
+                reserva[i] = -1;
+            }
+            disponibleHorario = 0;
             // Recibir la selección de la línea de autobuses
             int seleccion = recv(nuevo, buffer, SIZE - 1, 0);
             buffer[seleccion] = '\0';
             printf("El cliente seleccionó la línea de autobuses: %s\n", buffer);
             reserva[0] = atoi(buffer);
-
-            // Dependiendo de la selección, enviar las rutas disponibles
-            // char *rutas;
-            // if (opcion >= 1 && opcion <= 5) {
-            //     rutas = "Rutas disponibles: 1. NORTE 2. SUR 3. ESTE 4. OESTE\n";
-            // } else {
-            //     rutas = "Opción inválida. Conexión cerrada.\n";
-            //     send(nuevo, rutas, strlen(rutas), 0);
-            //     close(nuevo);
-            //     exit(0);
-            // }
-            // send(nuevo, rutas, strlen(rutas), 0);
 
             // Recibir la selección de la ruta
             int seleccionRuta = recv(nuevo, buffer, SIZE - 1, 0);
@@ -89,77 +148,118 @@ int main(int argc, char *argv[]) {
             switch (reserva[1]) {
                 case 1: // NORTE
                     num_estados = sizeof(NORTE) / sizeof(NORTE[0]);
-                    snprintf(buffer, SIZE, "%d", num_estados);
-                    send(nuevo, buffer, strlen(buffer), 0);
-
+                    // snprintf(buffer, SIZE, "%d", num_estados);
+                    // send(nuevo, buffer, strlen(buffer), 0);
                     // Envio de los estados
-                    for (int i = 0; i < num_estados; i++){
-                        snprintf(buffer, SIZE, "%s", NORTE[i]); // Cada cadena seguida de '\n'
-                        send(nuevo, buffer, strlen(buffer), 0);
-                    }
-                    
+                    construir_cadena(buffer, NORTE, num_estados, "|");
+                    printf("\n%s\n", buffer);
+                    send(nuevo, buffer, strlen(buffer), 0);
                     break;
                 case 2: // SUR
                     num_estados = sizeof(SUR) / sizeof(SUR[0]);
-                    snprintf(buffer, SIZE, "%d", num_estados);
-                    send(nuevo, buffer, strlen(buffer), 0);
+                    // snprintf(buffer, SIZE, "%d", num_estados);
+                    // send(nuevo, buffer, strlen(buffer), 0);
 
                     // Envio de los estados
-                    for (int i = 0; i < num_estados; i++){
-                        snprintf(buffer, SIZE, "%s", SUR[i]); // Cada cadena seguida de '\n'
-                        send(nuevo, buffer, strlen(buffer), 0);
-                    }
+                    construir_cadena(buffer, SUR, num_estados, "|");
+                    printf("\n%s\n", buffer);
+                    send(nuevo, buffer, strlen(buffer), 0);
                     break;
                 case 3: // ESTE
                     num_estados = sizeof(ESTE) / sizeof(ESTE[0]);
-                    snprintf(buffer, SIZE, "%d", num_estados);
-                    send(nuevo, buffer, strlen(buffer), 0);
+                    // snprintf(buffer, SIZE, "%d", num_estados);
+                    // send(nuevo, buffer, strlen(buffer), 0);
 
                     // Envio de los estados
-                    for (int i = 0; i < num_estados; i++){
-                        snprintf(buffer, SIZE, "%s", ESTE[i]); // Cada cadena seguida de '\n'
-                        send(nuevo, buffer, strlen(buffer), 0);
-                    }
+                    construir_cadena(buffer, ESTE, num_estados, "|");
+                    printf("\n%s\n", buffer);
+                    send(nuevo, buffer, strlen(buffer), 0);
                     break;
                 case 4: // OESTE
                     num_estados = sizeof(OESTE) / sizeof(OESTE[0]);
-                    snprintf(buffer, SIZE, "%d", num_estados);
-                    send(nuevo, buffer, strlen(buffer), 0);
+                    // snprintf(buffer, SIZE, "%d", num_estados);
+                    // send(nuevo, buffer, strlen(buffer), 0);
 
                     // Envio de los estados
-                    for (int i = 0; i < num_estados; i++){
-                        snprintf(buffer, SIZE, "%s", OESTE[i]); // Cada cadena seguida de '\n'
-                        send(nuevo, buffer, strlen(buffer), 0);
-                    }
+                    construir_cadena(buffer, OESTE, num_estados, "|");
+                    printf("\n%s\n", buffer);
+                    send(nuevo, buffer, strlen(buffer), 0);
                     break;
                 default:
                     exit(0);
-
                     break;
             }
-            // send(nuevo, estados, strlen(estados), 0);
             // // Recibir la selección del estado
             int seleccionEstado = recv(nuevo, buffer, SIZE - 1, 0);
             buffer[seleccionEstado] = '\0';
             reserva[2] = atoi(buffer);
             printf("El cliente seleccionó el estado: %d\n", reserva[2]);
 
-            // // Enviar los horarios disponibles
-            // char horarios[] = "Seleccione un horario:\n1. 8 AM\n2. 10 AM\n3. 12 PM\n4. 3 PM\n5. 6 PM\n";
-            // send(nuevo, horarios, strlen(horarios), 0);
+            // // // Enviar los horarios disponibles
+            int num_horarios = sizeof(HORARIOS) / sizeof(HORARIOS[0]);
+            // snprintf(buffer, SIZE, "%d", num_horarios);
+            // send(nuevo, buffer, strlen(buffer), 0);
+            // Envio de los horarios
+            construir_cadena(buffer, HORARIOS, num_horarios, "|");
+            printf("\n%s\n", buffer);
+            send(nuevo, buffer, strlen(buffer), 0);
+            int seleccionHorario, i;
+            while (1){
+                // // Recibir la selección del horario del cliente
+                seleccionHorario = recv(nuevo, buffer, sizeof(buffer) - 1, 0);
+                buffer[seleccionHorario] = '\0';
+                reserva[3] = atoi(buffer);
+                printf("El cliente seleccionó el horario: %d\n", reserva[3]);
 
-            // // Recibir la selección del horario del cliente
-            // int seleccionHorario = recv(nuevo, buffer, sizeof(buffer) - 1, 0);
-            // buffer[seleccionHorario] = '\0';
-            // printf("El cliente seleccionó el horario: %s\n", buffer);
+                // Verificar asientos
+                
+                search(registroReservas);
+                for (i = 0; i < 10; i++){
+                    printf("Asiento %d esta %d\n", i, asientos[i]);
+                    if (asientos[i] == 1){
+                        disponibleHorario = 1;
+                    }
+                }
+                send(nuevo, &disponibleHorario, sizeof(disponibleHorario), 0);
+                if (disponibleHorario){
+                    send(nuevo, asientos, sizeof(int) * 10, 0);
+                    break;
+                } else {
+                    // Restablece el arreglo
+                    for (i = 0; i < 10; i++){
+                        asientos[i] = 1;
+                    }
+                }
 
+            }
+            // Recibimos los lugares apartados
+            recv(nuevo, asientos, 10 * sizeof(int), 0);
+            printf("\n");
+            for (int i = 0; i < 10; i++){
+                printf("%d ", asientos[i]);
+            }
             // // Confirmación al cliente
-            // send(nuevo, "Su selección ha sido registrada. ¡Gracias!\n", 45, 0);
-            printf("\nEl estado de la reserva es: ");
-            for (int i = 0; i < 4; i++){
-                printf("%d ", reserva[i]);
+            send(nuevo, &vacational, sizeof(vacational), 0);
+
+            // Recibir los costos
+            recv(nuevo, costos, 10 * sizeof(double), 0);
+            for (int i = 0; i < 10; i++){
+                printf("%.2f\n", costos[i]);
+            }
+
+            // registrar los asientos
+            for (int i = 0; i < 10; i++){
+                if (asientos[i] == -1){
+                    reserva[4] = i;
+                    registerTicket(registroReservas);
+                }
             }
             
+            printf("\nEl estado de la reserva es: ");
+            for (int i = 0; i < 5; i++){
+                printf("%d ", reserva[i]);
+            }
+
             close(nuevo);
             exit(0);
         } else { // Proceso padre

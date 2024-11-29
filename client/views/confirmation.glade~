@@ -2,9 +2,9 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkWindow">
+  <object class="GtkWindow" id="confirmation">
     <property name="can-focus">False</property>
-    <property name="title" translatable="yes">UnixBus</property>
+    <property name="type">popup</property>
     <property name="window-position">center</property>
     <property name="default-width">700</property>
     <property name="default-height">200</property>
@@ -15,6 +15,23 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <property name="spacing">5</property>
+        <child>
+          <object class="GtkHeaderBar" id="header">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="title" translatable="yes">Asiento 1</property>
+            <property name="has-subtitle">False</property>
+            <property name="show-close-button">True</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
@@ -27,7 +44,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Detalles del boleto</property>
+                <property name="label" translatable="yes">Detalles del usuario</property>
                 <attributes>
                   <attribute name="scale" value="2"/>
                 </attributes>
@@ -42,7 +59,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Costos</property>
+                <property name="label" translatable="yes">Costo</property>
                 <attributes>
                   <attribute name="scale" value="2"/>
                 </attributes>
@@ -58,7 +75,7 @@
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="padding">10</property>
-            <property name="position">0</property>
+            <property name="position">1</property>
           </packing>
         </child>
         <child>
@@ -86,14 +103,14 @@
               </packing>
             </child>
             <child>
-              <!-- n-columns=1 n-rows=2 -->
+              <!-- n-columns=1 n-rows=3 -->
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="row-homogeneous">True</property>
                 <property name="baseline-row">20</property>
                 <child>
-                  <object class="GtkCheckButton">
+                  <object class="GtkCheckButton" id="checkChild">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">False</property>
@@ -102,7 +119,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Es niño o niña (Menor de 10 años)</property>
+                        <property name="label" translatable="yes">Es niño o niña (10%)</property>
                         <attributes>
                           <attribute name="scale" value="1.5"/>
                         </attributes>
@@ -115,7 +132,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkCheckButton">
+                  <object class="GtkCheckButton" id="checkOld">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">False</property>
@@ -124,7 +141,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Persona mayor de edad</property>
+                        <property name="label" translatable="yes">Persona mayor de edad (15%)</property>
                         <attributes>
                           <attribute name="scale" value="1.5"/>
                         </attributes>
@@ -134,6 +151,23 @@
                   <packing>
                     <property name="left-attach">0</property>
                     <property name="top-attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="vacacional">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="justify">center</property>
+                    <property name="ellipsize">middle</property>
+                    <attributes>
+                      <attribute name="weight" value="medium"/>
+                      <attribute name="scale" value="1.3"/>
+                      <attribute name="foreground" value="#9999c1c1f1f1"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">2</property>
                   </packing>
                 </child>
               </object>
@@ -184,7 +218,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkLabel" id="precio">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label" translatable="yes">$ 0</property>
@@ -198,7 +232,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkLabel" id="descuento">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label" translatable="yes">0 %</property>
@@ -212,7 +246,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkLabel" id="total">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label" translatable="yes">$ 0</property>
@@ -273,23 +307,6 @@
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="padding">10</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkHeaderBar">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="title" translatable="yes">BUAP</property>
-            <property name="has-subtitle">False</property>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack-type">end</property>
             <property name="position">2</property>
           </packing>
         </child>
@@ -317,7 +334,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="continuar">
                 <property name="label" translatable="yes">Continuar</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -352,7 +369,25 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
+            <property name="padding">10</property>
             <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHeaderBar">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="title" translatable="yes">BUAP</property>
+            <property name="has-subtitle">False</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack-type">end</property>
+            <property name="position">4</property>
           </packing>
         </child>
       </object>

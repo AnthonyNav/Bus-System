@@ -13,9 +13,23 @@
 // Variables globales
 GtkWidget *window;
 GtkComboBoxText *comboBox;
+const char *background = "#641e16";
+const char *color = "white";
+int descuento[2] = {0, 0}; // Descuento acumulado: [0] child/old, [1] vacation
+const int desChild = 10;   // Porcentaje
+const int desOld = 15;
+GtkLabel *price;
+GtkLabel *desc;
+GtkLabel *total;
+GtkCheckButton *checkChild;
+GtkCheckButton *checkOld;
 
 // Controlador de reserva [linea, ruta, estado, horario, asiento]
 int reserva[4] = {-1,-1,-1,-1};
+// Asientos
+int asientos[10];
+double costos[10];
+double totalTicket;
 
 // Callback para el botón
 void on_button_clicked_lines(GtkButton *button, char *buffer) {
@@ -46,8 +60,6 @@ void on_button_clicked_lines(GtkButton *button, char *buffer) {
     gtk_main_quit();
 
 }
-
-
 
 void linesView(int argc, char *argv[]){
     // Definiendo los componentes de la GUI
@@ -140,7 +152,6 @@ void on_button_clicked_routes(GtkButton *button, char *buffer) {
     gtk_main_quit();
 }
 
-
 void routesView(int argc, char *argv[]){
     // Definiendo los componentes de la GUI
     GtkBuilder *builder;
@@ -203,21 +214,20 @@ void routesView(int argc, char *argv[]){
     gtk_main();
 
 }
-
+// Callback para el boton
 void on_button_clicked_dest(GtkButton *button, char *buffer) {
     int selection = gtk_combo_box_get_active(GTK_COMBO_BOX(comboBox));
-    //printf("posicion %d", selection);
+    // printf("posicion %d", selection);
     reserva[2] = selection;
     gtk_widget_hide(window);
     gtk_main_quit();
 }
 
-
-void destinationsView(int argc, char *argv[], char *buffer, char ESTADO[][20], int num_estados){
+void destinationsView(int argc, char *argv[], char *buffer, char **ESTADO, int num_estados) {
     // Definiendo los componentes de la GUI
     GtkBuilder *builder;
     GtkButton *button_ACCEPT;
-    
+
     // Inicializar GTK
     gtk_init(&argc, &argv);
 
@@ -229,51 +239,327 @@ void destinationsView(int argc, char *argv[], char *buffer, char ESTADO[][20], i
     if (!window) {
         g_error("Error: No se pudo cargar la ventana principal.");
     }
-    // Obtener el combo box para la seleccion de destinos
+
+    // Obtener el combo box para la selección de destinos
     comboBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "destinations_list"));
     if (!comboBox) {
-        g_error("Error: No se pudo cargar el combobox .");
+        g_error("Error: No se pudo cargar el combobox.");
     }
-    // Rellena el combobox
+
+    // Rellenar el combo box con los estados
     for (int i = 0; i < num_estados; i++) {
         gtk_combo_box_text_append_text(comboBox, ESTADO[i]);
     }
 
+    // Seleccionar el primer elemento del combo box por defecto
     gtk_combo_box_set_active(GTK_COMBO_BOX(comboBox), 0);
 
     // Obtener botón continuar o aceptar
     button_ACCEPT = GTK_BUTTON(gtk_builder_get_object(builder, "continue"));
     if (!button_ACCEPT) {
-        g_error("Error: No se pudo cargar el botón 'NORTE'.");
+        g_error("Error: No se pudo cargar el botón 'continue'.");
     }
 
-    // Conectando los signals para llamar a la funcion
+    // Conectar el botón "Aceptar" con la función de callback
     g_signal_connect(button_ACCEPT, "clicked", G_CALLBACK(on_button_clicked_dest), buffer);
 
+    // Conectar la señal de cierre de ventana para salir del bucle GTK
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     // Mostrar ventana principal
     gtk_widget_show_all(window);
+
     // Iniciar el bucle principal de GTK
     gtk_main();
 }
 
+void on_button_clicked_sche(GtkButton *button, char *buffer) {
+    int selection = gtk_combo_box_get_active(GTK_COMBO_BOX(comboBox));
+    reserva[3] = selection;
+    gtk_widget_hide(window);
+    gtk_main_quit();
+}
 
+void scheduleView(int argc, char *argv[], char *buffer, char **HORARIO, int num_horarios, int flag) {
+    // Definiendo los componentes de la GUI
+    GtkBuilder *builder;
+    GtkButton *button_ACCEPT;
 
-// int main(int argc, char *argv[]) {
-//     char buffer[255] = {0};
-//     linesView(argc, argv, buffer);
-//     printf("La linea seleccionada fue: %c\n", buffer[0]);
-//     routesView(argc, argv, buffer);
-//     printf("La ruta seleccionada fue: %c", buffer[0]);
-//     return 0;
-// }
+    // Inicializar GTK
+    gtk_init(&argc, &argv);
 
+    // Cargar archivo Glade
+    builder = gtk_builder_new_from_file("./views/schedule.glade");
+
+    // Obtener ventana principal
+    window = GTK_WIDGET(gtk_builder_get_object(builder, "scheWindow"));
+    if (!window) {
+        g_error("Error: No se pudo cargar la ventana principal.");
+    }
+
+    // Obtener el combo box para la selección de los horarios
+    comboBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "schedule_list"));
+    if (!comboBox) {
+        g_error("Error: No se pudo cargar el combobox.");
+    }
+
+    if (flag){
+        GtkWidget *messageError;
+        messageError = GTK_WIDGET(gtk_builder_get_object(builder, "message"));
+        if (!messageError) {
+        g_error("Error: No se pudo cargar el label de error");
+        }
+
+        gtk_label_set_text(GTK_LABEL(messageError), "No hay asientos disponibles\nSeleccione otro horario");
+    }
+    
+
+    // Rellenar el combo box con los horarios
+    for (int i = 0; i < num_horarios; i++) {
+        gtk_combo_box_text_append_text(comboBox, HORARIO[i]);
+    }
+
+    // Seleccionar el primer elemento del combo box por defecto
+    gtk_combo_box_set_active(GTK_COMBO_BOX(comboBox), 0);
+
+    // Obtener botón continuar o aceptar
+    button_ACCEPT = GTK_BUTTON(gtk_builder_get_object(builder, "continue"));
+    if (!button_ACCEPT) {
+        g_error("Error: No se pudo cargar el botón 'continue'.");
+    }
+
+    // Conectar el botón "Aceptar" con la función de callback
+    g_signal_connect(button_ACCEPT, "clicked", G_CALLBACK(on_button_clicked_sche), buffer);
+
+    // Conectar la señal de cierre de ventana para salir del bucle GTK
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Mostrar ventana principal
+    gtk_widget_show_all(window);
+
+    // Iniciar el bucle principal de GTK
+    gtk_main();
+}
+
+void procesar_cadena(char *cadena, char ***estados, int *num_estados, const char *delimitador) {
+    *num_estados = 0;
+    *estados = NULL; // Inicializar el puntero a NULL
+
+    char *token = strtok(cadena, delimitador);
+    while (token != NULL) {
+        *estados = realloc(*estados, (*num_estados + 1) * sizeof(char *)); // Redimensionar memoria
+        if (*estados == NULL) {
+            perror("Error al asignar memoria");
+            exit(1);
+        }
+
+        (*estados)[*num_estados] = malloc(strlen(token) + 1); // Reservar memoria para el estado
+        if ((*estados)[*num_estados] == NULL) {
+            perror("Error al asignar memoria para estado");
+            exit(1);
+        }
+
+        strcpy((*estados)[*num_estados], token); // Copiar el token
+        (*num_estados)++; // Incrementar el contador de estados
+        token = strtok(NULL, delimitador); // Obtener el siguiente token
+    }
+}
+
+void on_button_clicked_seat(GtkButton *button, char *buffer) {
+    const char *text = gtk_button_get_label(button);
+    int id = atoi(text) -1;
+    if (asientos[id] != -1){
+        // Crear un proveedor de CSS
+        GtkCssProvider *provider = gtk_css_provider_new();
+        // Crear el CSS dinámicamente
+        char css[256];
+        snprintf(css, sizeof(css),
+                "button { background: %s; color: %s; }",
+                "#b32000", "black");
+        // Cargar el CSS en el proveedor
+        gtk_css_provider_load_from_data(provider, css, -1, NULL);
+        GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(button));
+                // Aplicar el proveedor al contexto del botón
+        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+        // Liberar el proveedor después de aplicarlo
+        g_object_unref(provider);
+        asientos[id] = -1;
+    }
+    
+}
+
+void on_button_clicked_ready(GtkButton *button, char *buffer) {
+    gtk_widget_hide(window);
+    gtk_main_quit();
+}
+
+void seatsView(int argc, char *argv[], char *buffer) {
+    // Definiendo los componentes de la GUI
+    GtkBuilder *builder;
+    GtkButton *button_seats[10];
+    GtkButton *button_Accept;
+    int i;
+
+    // Crear un proveedor de CSS
+    GtkCssProvider *provider = gtk_css_provider_new();
+    // Crear el CSS dinámicamente
+    char css[256];
+    snprintf(css, sizeof(css),
+             "button { background: %s; color: %s; box-shadow:none;}",
+             background, color);
+    // Cargar el CSS en el proveedor
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+
+    // Inicializar GTK
+    gtk_init(&argc, &argv);
+
+    // Cargar archivo Glade
+    builder = gtk_builder_new_from_file("./views/seats.glade");
+
+    // Obtener ventana principal
+    window = GTK_WIDGET(gtk_builder_get_object(builder, "seatWindow"));
+    if (!window) {
+        g_error("Error: No se pudo cargar la ventana principal.");
+    }
+
+    char id_button[3];  // Espacio suficiente para almacenar "10\0"
+    for (i = 0; i < 10; i++) {
+        sprintf(id_button, "%d", i + 1);
+        button_seats[i] = GTK_BUTTON(gtk_builder_get_object(builder, id_button));
+        if (!button_seats[i]) {
+            g_error("Error: No se pudo cargar el asiento: %d", i + 1);
+        }
+        if (asientos[i] == 1) {
+            g_signal_connect(button_seats[i], "clicked", G_CALLBACK(on_button_clicked_seat), buffer);
+        } else {
+            GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(button_seats[i]));
+            // Aplicar el proveedor al contexto del botón
+            gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+        }
+    }
+
+    // Obtener botón continuar o aceptar
+    button_Accept = GTK_BUTTON(gtk_builder_get_object(builder, "Aceptar"));
+    if (!button_Accept) {
+        g_error("Error: No se pudo cargar el botón 'Aceptar'.");
+    }
+
+    // Conectar el botón "Aceptar" con la función de callback
+    g_signal_connect(button_Accept, "clicked", G_CALLBACK(on_button_clicked_ready), buffer);
+
+    // Conectar la señal de cierre de ventana para salir del bucle GTK
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Mostrar ventana principal
+    gtk_widget_show_all(window);
+
+    // Iniciar el bucle principal de GTK
+    gtk_main();
+
+    // Liberar el proveedor después de aplicarlo
+    g_object_unref(provider);
+}
+
+void changeValues() {
+    int priceTicket = reserva[0] * reserva[2] * 10 + 40; // Calcular precio base
+    int descTicket = descuento[0] + descuento[1];        // Calcular descuento acumulado
+    totalTicket = priceTicket * (1 - (descTicket / 100.0));
+
+    char priceText[50], descText[50], totalText[50];
+    snprintf(priceText, sizeof(priceText), "$ %d", priceTicket);
+    snprintf(descText, sizeof(descText), "$ %d%%", descTicket);
+    snprintf(totalText, sizeof(totalText), "$ %.2f", totalTicket);
+
+    gtk_label_set_text(price, priceText);
+    gtk_label_set_text(desc, descText);
+    gtk_label_set_text(total, totalText);
+}
+
+// Callback para el botón
+void on_button_clicked_conf(GtkButton *button, gpointer data) {
+    descuento[0] = 0;
+    gtk_widget_hide(window);
+    gtk_main_quit();
+}
+
+void on_checkbutton_toggled(GtkCheckButton *check, gpointer user_data) {
+    const char *type = (const char *)user_data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check))) {
+        if (strcmp(type, "child") == 0) {
+            descuento[0] = desChild; // Descuento infantil
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkOld), FALSE);
+        } else if (strcmp(type, "old") == 0) {
+            descuento[0] = desOld; // Descuento para personas mayores
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkChild), FALSE); 
+        }
+    } else {
+        descuento[0] = 0; // Restablecer descuento
+    }
+    g_signal_connect(checkChild, "toggled", G_CALLBACK(on_checkbutton_toggled), "child");
+    g_signal_connect(checkOld, "toggled", G_CALLBACK(on_checkbutton_toggled), "old");   
+    changeValues();
+}
+
+void confirmationView(int argc, char *argv[], char *buffer, int vacation, int numSeat, int vacationValue) {
+    // Inicializar GTK
+    gtk_init(&argc, &argv);
+
+    // Cargar archivo Glade
+    GtkBuilder *builder = gtk_builder_new_from_file("./views/confirmation.glade");
+    GtkLabel *message;
+    // Obtener ventana principal
+    window = GTK_WIDGET(gtk_builder_get_object(builder, "confirmation"));
+    if (!window) {
+        g_error("Error: No se pudo cargar la ventana principal.");
+    }
+
+    // Obtener componentes de la interfaz
+    GtkHeaderBar *header = GTK_HEADER_BAR(gtk_builder_get_object(builder, "header"));
+    char title[50];
+    snprintf(title, sizeof(title), "Asiento %d", numSeat);
+    gtk_header_bar_set_title(header, title);
+
+    checkChild = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkChild"));
+    checkOld = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkOld"));
+    message = GTK_LABEL(gtk_builder_get_object(builder, "vacacional"));
+    GtkButton *button_Accept = GTK_BUTTON(gtk_builder_get_object(builder, "continuar"));
+    price = GTK_LABEL(gtk_builder_get_object(builder, "precio"));
+    desc = GTK_LABEL(gtk_builder_get_object(builder, "descuento"));
+    total = GTK_LABEL(gtk_builder_get_object(builder, "total"));
+
+    if (!checkChild || !checkOld || !button_Accept || !price || !desc || !total) {
+        g_error("Error: No se pudieron cargar todos los componentes de la interfaz.");
+    }
+
+    // Asignar señales a los botones
+    g_signal_connect(button_Accept, "clicked", G_CALLBACK(on_button_clicked_conf), NULL);
+    g_signal_connect(checkChild, "toggled", G_CALLBACK(on_checkbutton_toggled), "child");
+    g_signal_connect(checkOld, "toggled", G_CALLBACK(on_checkbutton_toggled), "old");
+
+    if (vacation){
+        // Inicializar valores
+        descuento[1] = vacationValue; // Descuento por vacaciones
+        gtk_label_set_text(message, "Descuento por periodo vacacional");
+        changeValues();
+    }
+    
+
+    // Mostrar ventana principal
+    gtk_widget_show_all(window);
+
+    // Iniciar el bucle principal de GTK
+    gtk_main();
+}
 
 int main(int argc, char *argv[]) {
-    int mi_socket, tam, numbytes, numEst;
-    char buffer[SIZE] = {0}, estados[15][20];
+    int mi_socket, tam, numbytes, numEst, disp;
+    char buffer[SIZE] = {0};
+    char **estados = NULL; // Apuntador dinámico para los estados
+    char **horarios = NULL; // Apuntador dinámico para los estados
     struct sockaddr_in mi_estructura;
+    char choiceSche[2], choiceLine[2], choiceRoute[2], choiceDest[2]; 
 
     if (argc != 3) {
         printf("Error: modo de empleo: cliente ip puerto\n");
@@ -312,19 +598,17 @@ int main(int argc, char *argv[]) {
         printf("Se rechazo el permiso");
         exit(1);
     } 
-    // Seleccion de linea
+    // Seleccion de linea de autobus
     linesView(argc, argv);
-    char choiceLine[2];
     if (reserva[0] == -1){
         exit(1);
     }
-    // Conversion de numero a cadena
     sprintf(choiceLine, "%d", reserva[0]);
     printf("Linea: %s", choiceLine);
     send(mi_socket, choiceLine, strlen(choiceLine), 0);
 
+    // Seleccion de rutas
     routesView(argc, argv);
-    char choiceRoute[2];
     if (reserva[1] == -1){
         exit(1);
     }
@@ -332,28 +616,113 @@ int main(int argc, char *argv[]) {
     printf("Ruta: %s", choiceRoute);
     send(mi_socket, choiceRoute, strlen(choiceRoute), 0);
 
-    // // Recibir y mostrar los estados disponibles para la ruta seleccionada
+    // Recibir y mostrar los estados disponibles para la ruta seleccionada
+    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+    // buffer[numbytes] = '\0';
+    // printf("\n Cantidad de estados %s\n", buffer); // Imprimir la cantidad de estados a recibir
+    // numEst = atoi(buffer);
+
+    // Recibir los estados concatenados
     numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
     buffer[numbytes] = '\0';
-    // printf("\n%s\n", buffer); // Imprimir la cantidad de estados a recibir
-    numEst = atoi(buffer);
+    printf("\nEstados recibidos (raw): %s\n", buffer);
 
-    for (int i = 0; i < numEst; i++) {
-        numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-        buffer[numbytes] = '\0';
-        //printf("Entrada: %s\n", buffer);
-        strcpy(estados[i], buffer);
-        //printf("Guardado: %s\n", estados[i]);
-    }
-    // Destinos
-    destinationsView(argc, argv, buffer, estados, numEst);
-    char choiceDest[2];
+    // Procesar cadena
+    int totalEstados = 0;
+    procesar_cadena(buffer, &estados, &totalEstados, "|");
+    destinationsView(argc, argv, buffer, estados, totalEstados);
+
     if (reserva[2] == -1){
         exit(1);
     }
     sprintf(choiceDest, "%d", reserva[2]);
-    printf("Ruta: %s", choiceDest);
+    printf("Estado: %s", choiceDest);
     send(mi_socket, choiceDest, strlen(choiceDest), 0);
+
+    // Seleccion de horarios
+    // printf("Llego");
+    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+    // buffer[numbytes] = '\0';
+    // printf("\n Cantidad de horarios %s\n", buffer); // Imprimir la cantidad de estados a recibir
+    // numEst = atoi(buffer);
+
+    numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+    buffer[numbytes] = '\0';
+    printf("\nHorarios recibidos (raw): %s\n", buffer);
+
+    int totalHorarios = 0;
+    procesar_cadena(buffer, &horarios, &totalHorarios, "|");
+    int flag = 0;
+    while (1){
+        scheduleView(argc, argv, buffer, horarios, totalHorarios, flag);
+        if (reserva[3] == -1){
+            exit(1);
+        }
+        sprintf(choiceSche, "%d", reserva[3]);
+        printf("Horario: %s", choiceSche);
+        send(mi_socket, choiceSche, strlen(choiceSche), 0);
+
+        // Confirmacion de que hay asientos disponibles
+        recv(mi_socket, &disp, sizeof(disp), 0);
+        if (disp){
+            printf("\nSi hay asientos\n");
+            // Recibir de asientos disponibles
+            recv(mi_socket, asientos, 10 * sizeof(int), 0);
+            printf("Arreglo recibido:\n");
+
+            for (int i = 0; i < 10; i++){
+                printf("Asiento %d esta %d\n", i, asientos[i]);
+            }
+            break;
+        }
+        flag = 1;
+    }
+    seatsView(argc, argv, buffer);
+    printf("\n");
+    for (int i = 0; i < 10; i++){
+        printf("%d ", asientos[i]);
+    }
+    send(mi_socket, asientos, sizeof(int) * 10, 0);
+    // Recibir si es temporada vacacional y el porcentaje de descuento
+    int vac[2];
+    recv(mi_socket, &vac, sizeof(vac), 0);
+
+    for (int i = 0; i < 10; i++){
+        if (asientos[i] == -1){
+            confirmationView(argc, argv, buffer, vac[0], i+1, vac[1]);
+            costos[i] = totalTicket;
+            //printf("\nCosto del asiento %d es %.2f", i+1, costos[i]);
+        }   
+    }
+
+    send(mi_socket, costos, sizeof(double) * 10, 0);
+
+    // printf("\nEstados procesados:\n");
+    // for (int i = 0; i < totalEstados; i++) {
+    //     printf("Estado %d: %s\n", i + 1, estados[i]);
+    //     free(estados[i]); // Liberar memoria de cada estado
+    // }
+
+    free(estados); // Liberar memoria del arreglo de punteros
+
+    // Cerrar socket
+    close(mi_socket);
+    return 0;
+}
+
+
+
+
+
+    // // Destinos
+    // destinationsView(argc, argv, buffer, estados, numEst);
+    // char choiceDest[2];
+    // if (reserva[2] == -1){
+    //     exit(1);
+    // }
+    // sprintf(choiceDest, "%d", reserva[2]);
+    // printf("Ruta: %s", choiceDest);
+    // send(mi_socket, choiceDest, strlen(choiceDest), 0);
 
     // // Solicitar la selección de estado al usuario
     // printf("Seleccione un estado: ");
@@ -380,9 +749,3 @@ int main(int argc, char *argv[]) {
     // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
     // buffer[numbytes] = '\0';
     // printf("%s\n", buffer); // Imprimir confirmación
-
-
-    // Cerrar socket
-    close(mi_socket);
-    return 0;
-}

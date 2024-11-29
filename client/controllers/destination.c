@@ -57,10 +57,8 @@ void destinationsView(int argc, char *argv[], char *buffer, char ESTADO[][30], i
 
     // Mostrar ventana principal
     gtk_widget_show_all(window);
-
     // Iniciar el bucle principal de GTK
     gtk_main();
-
 }
 
 int main(int argc, char *argv[]) {
