@@ -542,9 +542,8 @@ void confirmationView(int argc, char *argv[], char *buffer, int vacation, int nu
         // Inicializar valores
         descuento[1] = vacationValue; // Descuento por vacaciones
         gtk_label_set_text(message, "Descuento por periodo vacacional");
-        changeValues();
     }
-    
+    changeValues();
 
     // Mostrar ventana principal
     gtk_widget_show_all(window);
