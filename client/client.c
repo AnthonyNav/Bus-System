@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #define SIZE 255
-
+#define MAX_SEATS 10
 // Variables globales
 GtkWidget *window;
 GtkComboBoxText *comboBox;
@@ -127,7 +127,7 @@ void linesView(int argc, char *argv[]){
 void on_button_clicked_routes(GtkButton *button, char *buffer) {
     //printf("Se activó la función\n");
     const char *text = gtk_button_get_label(button);
-    printf("%s\n", text);
+    //printf("%s\n", text);
     if (strcmp(text, "NORTE") == 0) {
         //printf("OPCION NORTE\n");
         reserva[1] = 1;
@@ -365,29 +365,41 @@ void procesar_cadena(char *cadena, char ***estados, int *num_estados, const char
     }
 }
 
+
 void on_button_clicked_seat(GtkButton *button, char *buffer) {
     const char *text = gtk_button_get_label(button);
-    int id = atoi(text) -1;
-    if (asientos[id] != -1){
-        // Crear un proveedor de CSS
-        GtkCssProvider *provider = gtk_css_provider_new();
-        // Crear el CSS dinámicamente
-        char css[256];
-        snprintf(css, sizeof(css),
-                "button { background: %s; color: %s; }",
-                "#b32000", "black");
-        // Cargar el CSS en el proveedor
-        gtk_css_provider_load_from_data(provider, css, -1, NULL);
-        GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(button));
-                // Aplicar el proveedor al contexto del botón
-        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+    int id = atoi(text) - 1;
 
-        // Liberar el proveedor después de aplicarlo
-        g_object_unref(provider);
+    GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(button));
+
+    if (asientos[id] == -1) {
+        // Restablecer los estilos originales removiendo la clase personalizada
+        gtk_style_context_remove_class(context, "selected-seat");
+        asientos[id] = 1;
+    } else {
+        // Crear un proveedor CSS si no existe
+        static GtkCssProvider *provider = NULL;
+        if (!provider) {
+            provider = gtk_css_provider_new();
+            const char *css = 
+                ".selected-seat {"
+                "    background: #b32000;"
+                "    color: black;"
+                "}";
+            gtk_css_provider_load_from_data(provider, css, -1, NULL);
+            gtk_style_context_add_provider_for_screen(
+                gdk_screen_get_default(),
+                GTK_STYLE_PROVIDER(provider),
+                GTK_STYLE_PROVIDER_PRIORITY_USER
+            );
+        }
+
+        // Aplicar la clase personalizada para el botón
+        gtk_style_context_add_class(context, "selected-seat");
         asientos[id] = -1;
     }
-    
 }
+
 
 void on_button_clicked_ready(GtkButton *button, char *buffer) {
     gtk_widget_hide(window);
@@ -552,11 +564,67 @@ void confirmationView(int argc, char *argv[], char *buffer, int vacation, int nu
     gtk_main();
 }
 
+void imprimir_linea(const char *texto, int ancho_total) {
+    int longitud_texto = strlen(texto);
+    int espacios_derecha = (ancho_total - longitud_texto - 2) / 2; // Resto para bordes
+    int espacios_izquierda = ancho_total - longitud_texto - 2 - espacios_derecha;
+
+    printf("*%*s%s%*s*\n", espacios_izquierda, "", texto, espacios_derecha, "");
+}
+
+// Función para generar el ticket
+void generar_ticket(const char *linea_autobus, const char *region, const char *estado_destino, const char *horario, 
+                    int asientos[], double costos[]) {
+    const int ancho_ticket = 46;
+    double total = 0.0;
+
+    // Encabezado
+    printf("\n%.*s\n", ancho_ticket, "**********************************************");
+    imprimir_linea("TICKET DE COMPRA", ancho_ticket);
+    printf("%.*s\n", ancho_ticket, "**********************************************");
+
+    // Información del viaje
+    char info[ancho_ticket];
+    snprintf(info, sizeof(info), "Linea de autobus: %s", linea_autobus);
+    imprimir_linea(info, ancho_ticket);
+
+    snprintf(info, sizeof(info), "Region: %s", region);
+    imprimir_linea(info, ancho_ticket);
+
+    snprintf(info, sizeof(info), "Estado destino: %s", estado_destino);
+    imprimir_linea(info, ancho_ticket);
+
+    snprintf(info, sizeof(info), "Horario: %s", horario);
+    imprimir_linea(info, ancho_ticket);
+
+    // Detalle de los asientos seleccionados
+    printf("%.*s\n", ancho_ticket, "**********************************************");
+    imprimir_linea("Asiento(s) seleccionados:", ancho_ticket);
+    for (int i = 0; i < MAX_SEATS; i++) {
+        if (asientos[i] == -1) {
+            snprintf(info, sizeof(info), "Asiento %d: $%.2f", i + 1, costos[i]);
+            imprimir_linea(info, ancho_ticket);
+            total += costos[i];
+        }
+    }
+
+    // Total a pagar
+    printf("%.*s\n", ancho_ticket, "**********************************************");
+    snprintf(info, sizeof(info), "Total a pagar: $%.2f", total);
+    imprimir_linea(info, ancho_ticket);
+    printf("%.*s\n", ancho_ticket, "**********************************************");
+
+    // Mensaje final
+    imprimir_linea("¡Gracias por su compra!", ancho_ticket);
+    printf("%.*s\n", ancho_ticket, "**********************************************");
+}
+
 int main(int argc, char *argv[]) {
     int mi_socket, tam, numbytes, numEst, disp;
     char buffer[SIZE] = {0};
     char **estados = NULL; // Apuntador dinámico para los estados
-    char **horarios = NULL; // Apuntador dinámico para los estados
+    char **horarios = NULL; // Apuntador dinámico para los horarios
+    char **datos = NULL; // Apuntador dinámico para los datos
     struct sockaddr_in mi_estructura;
     char choiceSche[2], choiceLine[2], choiceRoute[2], choiceDest[2]; 
 
@@ -603,7 +671,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     sprintf(choiceLine, "%d", reserva[0]);
-    printf("Linea: %s", choiceLine);
+    //printf("Linea: %s", choiceLine);
     send(mi_socket, choiceLine, strlen(choiceLine), 0);
 
     // Seleccion de rutas
@@ -612,42 +680,28 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     sprintf(choiceRoute, "%d", reserva[1]);
-    printf("Ruta: %s", choiceRoute);
+    //printf("Ruta: %s", choiceRoute);
     send(mi_socket, choiceRoute, strlen(choiceRoute), 0);
-
-    // Recibir y mostrar los estados disponibles para la ruta seleccionada
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("\n Cantidad de estados %s\n", buffer); // Imprimir la cantidad de estados a recibir
-    // numEst = atoi(buffer);
 
     // Recibir los estados concatenados
     numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
     buffer[numbytes] = '\0';
-    printf("\nEstados recibidos (raw): %s\n", buffer);
+    //printf("\nEstados recibidos (raw): %s\n", buffer);
 
     // Procesar cadena
     int totalEstados = 0;
     procesar_cadena(buffer, &estados, &totalEstados, "|");
     destinationsView(argc, argv, buffer, estados, totalEstados);
-
     if (reserva[2] == -1){
         exit(1);
     }
     sprintf(choiceDest, "%d", reserva[2]);
-    printf("Estado: %s", choiceDest);
+    //printf("Estado: %s", choiceDest);
     send(mi_socket, choiceDest, strlen(choiceDest), 0);
-
-    // Seleccion de horarios
-    // printf("Llego");
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("\n Cantidad de horarios %s\n", buffer); // Imprimir la cantidad de estados a recibir
-    // numEst = atoi(buffer);
 
     numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
     buffer[numbytes] = '\0';
-    printf("\nHorarios recibidos (raw): %s\n", buffer);
+    //printf("\nHorarios recibidos (raw): %s\n", buffer);
 
     int totalHorarios = 0;
     procesar_cadena(buffer, &horarios, &totalHorarios, "|");
@@ -658,29 +712,29 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         sprintf(choiceSche, "%d", reserva[3]);
-        printf("Horario: %s", choiceSche);
+        //printf("Horario: %s", choiceSche);
         send(mi_socket, choiceSche, strlen(choiceSche), 0);
 
         // Confirmacion de que hay asientos disponibles
         recv(mi_socket, &disp, sizeof(disp), 0);
         if (disp){
-            printf("\nSi hay asientos\n");
+            //printf("\nSi hay asientos\n");
             // Recibir de asientos disponibles
             recv(mi_socket, asientos, 10 * sizeof(int), 0);
-            printf("Arreglo recibido:\n");
+            //printf("Arreglo recibido:\n");
 
-            for (int i = 0; i < 10; i++){
-                printf("Asiento %d esta %d\n", i, asientos[i]);
-            }
+            // for (int i = 0; i < 10; i++){
+            //     printf("Asiento %d esta %d\n", i, asientos[i]);
+            // }
             break;
         }
         flag = 1;
     }
     seatsView(argc, argv, buffer);
-    printf("\n");
-    for (int i = 0; i < 10; i++){
-        printf("%d ", asientos[i]);
-    }
+    // printf("\n");
+    // for (int i = 0; i < MAX_SEATS; i++){
+    //     printf("%d ", asientos[i]);
+    // }
     send(mi_socket, asientos, sizeof(int) * 10, 0);
     // Recibir si es temporada vacacional y el porcentaje de descuento
     int vac[2];
@@ -696,55 +750,32 @@ int main(int argc, char *argv[]) {
 
     send(mi_socket, costos, sizeof(double) * 10, 0);
 
-    // printf("\nEstados procesados:\n");
-    // for (int i = 0; i < totalEstados; i++) {
-    //     printf("Estado %d: %s\n", i + 1, estados[i]);
-    //     free(estados[i]); // Liberar memoria de cada estado
-    // }
+    // Recibir los datos de compra
+    int totalDatos = 0;
+    numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
+    buffer[numbytes] = '\0';
 
+    // Procesar la cadena para separar los datos
+    procesar_cadena(buffer, &datos, &totalDatos, "|");
+
+    // Verificar si hay suficientes datos procesados
+    if (totalDatos < 4) {
+        fprintf(stderr, "Error: No se recibieron suficientes datos.\n");
+        exit(1);
+    }
+
+    // Llamar a la función generar_ticket con los primeros 4 elementos
+    generar_ticket(datos[0], datos[1], datos[2], datos[3], asientos, costos);
+
+    // Liberar la memoria asignada por procesar_cadena
+    for (int i = 0; i < totalDatos; i++) {
+        free(datos[i]);
+    }
     free(estados); // Liberar memoria del arreglo de punteros
-
+    free(horarios);
+    free(datos);
     // Cerrar socket
     close(mi_socket);
     return 0;
 }
 
-
-
-
-
-    // // Destinos
-    // destinationsView(argc, argv, buffer, estados, numEst);
-    // char choiceDest[2];
-    // if (reserva[2] == -1){
-    //     exit(1);
-    // }
-    // sprintf(choiceDest, "%d", reserva[2]);
-    // printf("Ruta: %s", choiceDest);
-    // send(mi_socket, choiceDest, strlen(choiceDest), 0);
-
-    // // Solicitar la selección de estado al usuario
-    // printf("Seleccione un estado: ");
-    // fgets(buffer, SIZE, stdin);
-    // buffer[strcspn(buffer, "\n")] = '\0'; // Eliminar el salto de línea
-
-    // // Enviar la selección de estado al servidor
-    // send(mi_socket, buffer, strlen(buffer), 0);
-
-    // // Recibir y mostrar los horarios disponibles
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("%s\n", buffer); // Imprimir los horarios disponibles
-
-    // // Solicitar la selección de horario al usuario
-    // printf("Seleccione un horario: ");
-    // fgets(buffer, SIZE, stdin);
-    // buffer[strcspn(buffer, "\n")] = '\0'; // Eliminar el salto de línea
-
-    // // Enviar la selección de horario al servidor
-    // send(mi_socket, buffer, strlen(buffer), 0);
-
-    // // Recibir y mostrar la confirmación final
-    // numbytes = recv(mi_socket, buffer, SIZE - 1, 0);
-    // buffer[numbytes] = '\0';
-    // printf("%s\n", buffer); // Imprimir confirmación
